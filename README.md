@@ -114,3 +114,95 @@ git push -u origin feature/your-feature
 Then create a Pull Request from your feature branch into `dev`.
 
 Do not develop directly on `main`.
+
+
+## Web App Overview
+
+This project is a simple **Task Manager CRUD Web Application** developed for SWE40006 Software Deployment and Evolution.
+
+The application allows users to:
+
+- Create a task
+- View tasks
+- Edit a task
+- Change task status
+- Filter tasks
+- Delete tasks
+
+The main purpose of this project is not to build a complex web application. The application is used to demonstrate our DevOps workflow, including automated testing, staging deployment, production deployment, and CI/CD.
+
+## Team Tasks
+
+Each team member should work only on their assigned feature branch.
+
+### Feature 1 — Create Task
+
+Branch:
+
+```text
+feature/create-task
+```
+
+Tasks:
+
+- Add a form to create a new task
+- Implement `POST /api/tasks`
+- Save the new task to the database
+- Refresh the task list after creation
+
+### Feature 2 — Edit Task
+
+Branch:
+
+```text
+feature/edit-task
+```
+
+Tasks:
+
+- Add an Edit button
+- Allow users to update task title and description
+- Implement `PUT /api/tasks/:id`
+- Update the task in the database
+
+### Feature 3 — Task Status
+
+Branch:
+
+```text
+feature/task-status
+```
+
+Tasks:
+
+- Allow task status to be changed
+- Supported statuses:
+  - `pending`
+  - `in_progress`
+  - `completed`
+- Save the updated status to the database
+
+### Feature 4 — Task Filter
+
+Branch:
+
+```text
+feature/task-filter
+```
+
+Tasks:
+
+- Add filters for:
+  - All
+  - Pending
+  - In Progress
+  - Completed
+- Show only tasks matching the selected status
+
+## Important
+
+⚠️ **Only push your code to the feature branch you are working on.**
+
+⚠️ **Do NOT push directly to `dev` or `main`.**
+
+After completing your feature, create a Pull Request to merge your branch into `dev`.
