@@ -3,6 +3,7 @@ const pool = require('../db');
 
 const router = express.Router();
 
+// READ ALL TASKS
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
@@ -19,6 +20,7 @@ router.get('/', async (req, res) => {
   }
 });
 
+// CREATE TASK
 router.post('/', async (req, res) => {
   const { title, description } = req.body;
 
@@ -30,7 +32,9 @@ router.post('/', async (req, res) => {
 
   try {
     const result = await pool.query(
-      'INSERT INTO tasks (title, description) VALUES ($1, $2) RETURNING *',
+      `INSERT INTO tasks (title, description)
+       VALUES ($1, $2)
+       RETURNING *`,
       [title.trim(), description || null]
     );
 
@@ -44,11 +48,16 @@ router.post('/', async (req, res) => {
   }
 });
 
+// UPDATE TASK STATUS
 router.patch('/:id/status', async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
-  const validStatuses = ['pending', 'in_progress', 'completed'];
+  const validStatuses = [
+    'pending',
+    'in_progress',
+    'completed'
+  ];
 
   if (!validStatuses.includes(status)) {
     return res.status(400).json({
@@ -58,7 +67,11 @@ router.patch('/:id/status', async (req, res) => {
 
   try {
     const result = await pool.query(
-      'UPDATE tasks SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+      `UPDATE tasks
+       SET status = $1,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2
+       RETURNING *`,
       [status, id]
     );
 
@@ -69,12 +82,42 @@ router.patch('/:id/status', async (req, res) => {
     }
 
     res.json(result.rows[0]);
-
   } catch (error) {
     console.error(error);
 
     res.status(500).json({
       error: 'Failed to update task status'
+    });
+  }
+});
+
+// DELETE TASK
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(
+      `DELETE FROM tasks
+       WHERE id = $1
+       RETURNING *`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: 'Task not found'
+      });
+    }
+
+    res.json({
+      message: 'Task deleted successfully',
+      task: result.rows[0]
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: 'Failed to delete task'
     });
   }
 });
