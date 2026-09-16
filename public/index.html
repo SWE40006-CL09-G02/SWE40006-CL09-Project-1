@@ -44,6 +44,46 @@
 
     </form>
 
+    <div id="task-filters">
+
+      <button
+        type="button"
+        class="filter-button active"
+        data-status="all"
+        onclick="setFilter('all')"
+      >
+        All
+      </button>
+
+      <button
+        type="button"
+        class="filter-button"
+        data-status="pending"
+        onclick="setFilter('pending')"
+      >
+        Pending
+      </button>
+
+      <button
+        type="button"
+        class="filter-button"
+        data-status="in_progress"
+        onclick="setFilter('in_progress')"
+      >
+        In Progress
+      </button>
+
+      <button
+        type="button"
+        class="filter-button"
+        data-status="completed"
+        onclick="setFilter('completed')"
+      >
+        Completed
+      </button>
+
+    </div>
+
     <div id="task-list">
       Loading tasks...
     </div>

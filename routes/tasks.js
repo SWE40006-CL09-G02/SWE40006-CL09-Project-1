@@ -3,12 +3,38 @@ const pool = require('../db');
 
 const router = express.Router();
 
-// READ ALL TASKS
+// READ ALL TASKS (OPTIONALLY FILTERED BY STATUS)
 router.get('/', async (req, res) => {
+  const { status } = req.query;
+
+  const validStatuses = [
+    'pending',
+    'in_progress',
+    'completed'
+  ];
+
+  const filterByStatus =
+    status !== undefined &&
+    status !== '' &&
+    status !== 'all';
+
+  if (filterByStatus && !validStatuses.includes(status)) {
+    return res.status(400).json({
+      error: 'Invalid task status filter'
+    });
+  }
+
   try {
-    const result = await pool.query(
-      'SELECT * FROM tasks ORDER BY id ASC'
-    );
+    const result = filterByStatus
+      ? await pool.query(
+          `SELECT * FROM tasks
+           WHERE status = $1
+           ORDER BY id ASC`,
+          [status]
+        )
+      : await pool.query(
+          'SELECT * FROM tasks ORDER BY id ASC'
+        );
 
     res.json(result.rows);
   } catch (error) {

@@ -10,8 +10,12 @@ function escapeHtml(value) {
 async function loadTasks() {
   const taskList = document.getElementById('task-list');
 
+  const url = currentFilter === 'all'
+    ? '/api/tasks'
+    : `/api/tasks?status=${encodeURIComponent(currentFilter)}`;
+
   try {
-    const response = await fetch('/api/tasks');
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error('Failed to load tasks');
@@ -20,7 +24,9 @@ async function loadTasks() {
     const tasks = await response.json();
 
     if (tasks.length === 0) {
-      taskList.innerHTML = '<p>No tasks found.</p>';
+      taskList.innerHTML = currentFilter === 'all'
+        ? '<p>No tasks found.</p>'
+        : '<p>No tasks found for this filter.</p>';
       return;
     }
 
@@ -112,6 +118,23 @@ async function loadTasks() {
     taskList.innerHTML =
       '<p>Unable to load tasks.</p>';
   }
+}
+
+let currentFilter = 'all';
+
+function setFilter(status) {
+  currentFilter = status;
+
+  document
+    .querySelectorAll('.filter-button')
+    .forEach(button => {
+      button.classList.toggle(
+        'active',
+        button.dataset.status === status
+      );
+    });
+
+  loadTasks();
 }
 
 async function createTask(event) {
