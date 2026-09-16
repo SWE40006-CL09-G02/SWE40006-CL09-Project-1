@@ -1,0 +1,45 @@
+body {
+  font-family: Arial, sans-serif;
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+#task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+#task-form input,
+#task-form textarea {
+  padding: 8px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+#task-form button {
+  align-self: flex-start;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.task {
+  border: 1px solid #ccc;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+}
+
+.task select {
+  margin-left: 8px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.task button {
+  margin-left: 12px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
