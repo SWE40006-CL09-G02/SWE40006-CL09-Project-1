@@ -25,6 +25,33 @@ body {
   cursor: pointer;
 }
 
+#task-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-button {
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.filter-button:hover {
+  background: #f0f0f0;
+}
+
+.filter-button.active {
+  background: #1f2937;
+  border-color: #1f2937;
+  color: #fff;
+}
+
 .task {
   border: 1px solid #ccc;
   padding: 16px;
