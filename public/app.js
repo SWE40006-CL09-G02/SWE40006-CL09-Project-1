@@ -1,3 +1,12 @@
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function loadTasks() {
   const taskList = document.getElementById('task-list');
 
@@ -16,9 +25,42 @@ async function loadTasks() {
     }
 
     taskList.innerHTML = tasks.map(task => `
-      <div class="task">
-        <h3>${task.title}</h3>
-        <p>${task.description || ''}</p>
+      <div class="task" data-id="${task.id}">
+
+        <div class="task-view">
+          <h3>${escapeHtml(task.title)}</h3>
+          <p>${escapeHtml(task.description || '')}</p>
+        </div>
+
+        <div class="task-edit">
+          <input
+            type="text"
+            class="edit-title"
+            value="${escapeHtml(task.title)}"
+            placeholder="Task title"
+          >
+
+          <textarea
+            class="edit-description"
+            placeholder="Description (optional)"
+          >${escapeHtml(task.description || '')}</textarea>
+
+          <div class="edit-actions">
+            <button
+              class="save-button"
+              onclick="saveTask(${task.id})"
+            >
+              Save
+            </button>
+
+            <button
+              class="cancel-button"
+              onclick="cancelEdit(${task.id})"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
 
         <div class="task-actions">
           <label>
@@ -46,6 +88,13 @@ async function loadTasks() {
               </option>
             </select>
           </label>
+
+          <button
+            class="edit-button"
+            onclick="startEdit(${task.id})"
+          >
+            Edit
+          </button>
 
           <button
             class="delete-button"
@@ -102,6 +151,98 @@ async function createTask(event) {
     console.error(error);
 
     alert('Unable to create task.');
+  }
+}
+
+function getTaskElement(id) {
+  return document.querySelector(
+    `.task[data-id="${id}"]`
+  );
+}
+
+function startEdit(id) {
+  const task = getTaskElement(id);
+
+  if (!task) {
+    return;
+  }
+
+  document
+    .querySelectorAll('.task.editing')
+    .forEach(openTask => {
+      openTask.classList.remove('editing');
+    });
+
+  task.classList.add('editing');
+
+  const titleInput =
+    task.querySelector('.edit-title');
+
+  titleInput.focus();
+
+  titleInput.setSelectionRange(
+    titleInput.value.length,
+    titleInput.value.length
+  );
+}
+
+function cancelEdit(id) {
+  const task = getTaskElement(id);
+
+  if (!task) {
+    return;
+  }
+
+  task.classList.remove('editing');
+
+  loadTasks();
+}
+
+async function saveTask(id) {
+  const task = getTaskElement(id);
+
+  if (!task) {
+    return;
+  }
+
+  const title =
+    task.querySelector('.edit-title').value;
+
+  const description =
+    task.querySelector('.edit-description').value;
+
+  if (!title || title.trim() === '') {
+    alert('Title is required.');
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `/api/tasks/${id}`,
+      {
+        method: 'PUT',
+
+        headers: {
+          'Content-Type': 'application/json'
+        },
+
+        body: JSON.stringify({
+          title,
+          description
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to update task');
+    }
+
+    await loadTasks();
+
+  } catch (error) {
+    console.error(error);
+
+    alert('Unable to update task.');
   }
 }
 

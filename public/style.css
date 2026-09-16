@@ -43,3 +43,31 @@ body {
   padding: 6px 12px;
   cursor: pointer;
 }
+
+.task-edit {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.task.editing .task-edit {
+  display: flex;
+}
+
+.task.editing .task-view,
+.task.editing .task-actions {
+  display: none;
+}
+
+.task-edit input,
+.task-edit textarea {
+  padding: 8px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.task-edit .edit-actions button {
+  margin-left: 0;
+  margin-right: 8px;
+}
