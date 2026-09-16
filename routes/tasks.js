@@ -74,6 +74,44 @@ router.post('/', async (req, res) => {
   }
 });
 
+// UPDATE TASK (TITLE AND DESCRIPTION)
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { title, description } = req.body;
+
+  if (!title || title.trim() === '') {
+    return res.status(400).json({
+      error: 'Title is required'
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE tasks
+       SET title = $1,
+           description = $2,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3
+       RETURNING *`,
+      [title.trim(), description ? description.trim() : null, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: 'Task not found'
+      });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: 'Failed to update task'
+    });
+  }
+});
+
 // UPDATE TASK STATUS
 router.patch('/:id/status', async (req, res) => {
   const { id } = req.params;
