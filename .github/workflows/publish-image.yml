@@ -2,7 +2,9 @@ name: Publish image
 
 on:
   push:
-    branches: [feature/dockerfile, staging]
+    branches: [staging]
+  workflow_dispatch:
+
 
 permissions:
   contents: read
