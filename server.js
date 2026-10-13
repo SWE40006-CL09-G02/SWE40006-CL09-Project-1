@@ -11,6 +11,21 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Record HTTP request latency for CloudWatch monitoring
+app.use((req, res, next) => {
+  const start = Date.now();
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+
+    console.log(
+      `HTTP_LATENCY method=${req.method} path=${req.path} duration_ms=${duration}`
+    );
+  });
+
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/tasks', taskRoutes);
