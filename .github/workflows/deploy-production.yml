@@ -1,0 +1,99 @@
+name: Deploy Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run tests
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  deploy:
+    name: Deploy to Production
+    needs: test
+    runs-on: ubuntu-latest
+
+    environment:
+      name: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find staging image
+        id: image
+        run: |
+          git fetch origin staging:refs/remotes/origin/staging
+
+          STAGING_SHA=$(git merge-base HEAD origin/staging)
+          SHORT_SHA=${STAGING_SHA:0:7}
+          REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
+
+          IMAGE="ghcr.io/${REPO}:sha-${SHORT_SHA}"
+
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "Deploying tested staging image: $IMAGE"
+
+      - name: Configure SSH
+        env:
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$PROD_SSH_KEY" > ~/.ssh/production_key
+          chmod 600 ~/.ssh/production_key
+          ssh-keyscan -H "$PROD_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy to Production EC2
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_USER: ${{ secrets.PROD_USER }}
+          IMAGE: ${{ steps.image.outputs.image }}
+        run: |
+          ssh -i ~/.ssh/production_key "$PROD_USER@$PROD_HOST" \
+            "IMAGE='$IMAGE' bash -s" <<'REMOTE'
+
+          set -e
+
+          echo "Pulling image: $IMAGE"
+          docker pull "$IMAGE"
+
+          echo "Stopping existing Production container"
+          docker stop task-manager-production || true
+          docker rm task-manager-production || true
+
+          echo "Starting Production container"
+          docker run -d \
+            --name task-manager-production \
+            --restart unless-stopped \
+            --env-file /home/ubuntu/task-manager/.env \
+            -p 80:3000 \
+            "$IMAGE"
+
+          echo "Waiting for health check..."
+
+          for i in $(seq 1 12); do
+            if curl -fsS http://localhost/health; then
+              echo
+              echo "Production deployment successful"
+              docker ps
+              exit 0
+            fi
+
+            echo "Waiting for application..."
+            sleep 5
+          done
+
+          echo "Production health check failed"
+          docker logs task-manager-production --tail 100
+          exit 1
+
+          REMOTE
