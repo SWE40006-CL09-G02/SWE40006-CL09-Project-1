@@ -5,9 +5,96 @@ body {
   padding: 0 20px;
 }
 
+#task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+#task-form input,
+#task-form textarea {
+  padding: 8px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+#task-form button {
+  align-self: flex-start;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+#task-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-button {
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.filter-button:hover {
+  background: #f0f0f0;
+}
+
+.filter-button.active {
+  background: #1f2937;
+  border-color: #1f2937;
+  color: #fff;
+}
+
 .task {
   border: 1px solid #ccc;
   padding: 16px;
   margin-bottom: 12px;
   border-radius: 8px;
+}
+
+.task select {
+  margin-left: 8px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.task button {
+  margin-left: 12px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.task-edit {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.task.editing .task-edit {
+  display: flex;
+}
+
+.task.editing .task-view,
+.task.editing .task-actions {
+  display: none;
+}
+
+.task-edit input,
+.task-edit textarea {
+  padding: 8px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.task-edit .edit-actions button {
+  margin-left: 0;
+  margin-right: 8px;
 }
