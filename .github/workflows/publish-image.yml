@@ -2,7 +2,7 @@ name: Publish image
 
 on:
   push:
-    branches: [staging]
+    branches: [dev, staging]
   workflow_dispatch:
 
 
