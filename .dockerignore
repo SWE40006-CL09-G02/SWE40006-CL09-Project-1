@@ -7,6 +7,11 @@ npm-debug.log
 !.env.example
 coverage
 tests
+e2e
+playwright.config.js
+playwright-report
+test-results
+jest.config.js
 database
 Dockerfile
 .dockerignore
