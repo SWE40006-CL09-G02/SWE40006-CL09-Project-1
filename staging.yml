@@ -19,7 +19,7 @@ jobs:
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ubuntu
-          key: ${{ secrets.STAGING_SSH_KEY }}
+          key: ${{ secrets.SSH_STAGING_KEY }}
           script: |
             docker pull ghcr.io/swe40006-cl09-g02/swe40006-cl09-project-1:latest
             docker stop staging-app && docker rm staging-app
