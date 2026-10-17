@@ -1,0 +1,106 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: staging-deployment
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Run CI Tests
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  deploy:
+    name: Build and Deploy to EC2
+    needs: test
+    runs-on: ubuntu-latest
+
+    environment:
+      name: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Docker tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=staging
+            type=raw,value=latest
+            type=sha
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Deploy to AWS EC2
+        uses: appleboy/ssh-action@v1
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_STAGING_KEY }}
+          envs: GHCR_TOKEN,GHCR_USER
+          script: |
+            set -e
+
+            IMAGE="ghcr.io/swe40006-cl09-g02/swe40006-cl09-project-1:staging"
+
+            echo "Logging into GHCR..."
+            printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+
+            echo "Pulling staging image..."
+            docker pull "$IMAGE"
+
+            echo "Removing old container..."
+            docker rm -f staging-app || true
+
+            echo "Starting new container..."
+            docker run -d \
+              --name staging-app \
+              --restart unless-stopped \
+              --env-file /home/ubuntu/.env.staging \
+              -p 3000:3000 \
+              "$IMAGE"
+
+            echo "Checking application health..."
+
+            for i in $(seq 1 12); do
+              if curl -fsS http://localhost:3000/health; then
+                echo "Staging deployment successful!"
+                docker ps
+                exit 0
+              fi
+
+              echo "Waiting for application..."
+              sleep 5
+            done
+
+            echo "Health check failed!"
+            docker logs staging-app --tail 100
+            exit 1
