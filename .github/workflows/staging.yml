@@ -89,12 +89,15 @@ jobs:
               "$IMAGE"
 
             echo "Checking application health..."
+
             for i in $(seq 1 12); do
-              if curl -fsS http://localhost:3000/health\; then
+              if curl -fsS http://localhost:3000/health; then
                 echo "Staging deployment successful!"
                 docker ps
                 exit 0
               fi
+
+              echo "Waiting for application..."
               sleep 5
             done
 
