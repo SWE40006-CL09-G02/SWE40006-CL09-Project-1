@@ -1,0 +1,103 @@
+name: Pipeline
+
+# One run takes a change from dev to the production approval step:
+#
+#   push to dev
+#     -> Test              unit and integration tests
+#     -> Merge to staging  dev is merged into the staging branch
+#     -> Staging           build and push the image, deploy to the staging EC2
+#     -> E2E               Playwright tests against the live staging site
+#     -> Merge to main     the tested staging commit is merged into main
+#     -> Production        waits for approval on the "production" environment,
+#                          then deploys the same image that was tested on staging
+#
+# If any stage fails, the later stages do not run.
+# The deploy stages are the existing workflows, called as reusable workflows.
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  test:
+    name: Test
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  promote-staging:
+    name: Merge dev into staging
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: promote-staging
+      cancel-in-progress: false
+    outputs:
+      sha: ${{ steps.merge.outputs.sha }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge dev into staging
+        id: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout staging
+          git merge --no-ff -m "Promote dev to staging (${GITHUB_SHA:0:7})" "$GITHUB_SHA"
+          git push origin staging
+
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  staging:
+    name: Staging
+    needs: promote-staging
+    uses: ./.github/workflows/staging.yml
+    secrets: inherit
+
+  e2e:
+    name: E2E (Staging)
+    needs: staging
+    uses: ./.github/workflows/e2e-staging.yml
+    secrets: inherit
+
+  promote-main:
+    name: Merge staging into main
+    needs: [promote-staging, e2e]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: promote-main
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge the tested staging commit into main
+        env:
+          SHA: ${{ needs.promote-staging.outputs.sha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout main
+          git merge --no-ff -m "Promote staging to main (${SHA:0:7})" "$SHA"
+          git push origin main
+
+  production:
+    name: Production
+    needs: promote-main
+    uses: ./.github/workflows/deploy-production.yml
+    with:
+      image_sha: ${{ github.sha }}
+    secrets: inherit

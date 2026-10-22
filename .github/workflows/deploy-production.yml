@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Called by pipeline.yml with the commit whose image was tested on staging
+  workflow_call:
+    inputs:
+      image_sha:
+        description: 'Commit SHA of the image to deploy (sha-<first 7> tag)'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -30,11 +37,20 @@ jobs:
 
       - name: Find staging image
         id: image
+        env:
+          IMAGE_SHA: ${{ inputs.image_sha }}
         run: |
-          git fetch origin staging:refs/remotes/origin/staging
+          # From pipeline.yml: use the commit that was built and tested.
+          # On a manual run or a push to main: use the latest staging commit.
+          if [ -n "$IMAGE_SHA" ]; then
+            SHORT_SHA=${IMAGE_SHA:0:7}
+          else
+            git fetch origin staging:refs/remotes/origin/staging
 
-          STAGING_SHA=$(git merge-base HEAD origin/staging)
-          SHORT_SHA=${STAGING_SHA:0:7}
+            STAGING_SHA=$(git merge-base HEAD origin/staging)
+            SHORT_SHA=${STAGING_SHA:0:7}
+          fi
+
           REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
 
           IMAGE="ghcr.io/${REPO}:sha-${SHORT_SHA}"
