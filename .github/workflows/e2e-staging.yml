@@ -2,16 +2,14 @@ name: E2E (Staging)
 
 # End-to-end acceptance tests run against the DEPLOYED Staging environment.
 #
-# This is the end-to-end layer required by the assignment (unit + integration
-# + E2E). It is intentionally separate from ci.yml (unit + integration) because
+# This is the end-to-end layer (unit + integratio + E2E). 
+# It is intentionally separate from ci.yml (unit + integration) because
 # it must run AFTER the application has been deployed to Staging, against the
 # live Staging URL.
 #
 # Triggers:
 #   1. workflow_run - automatically after the Staging deployment workflow
-#      finishes successfully. Add the Staging deploy workflow's `name:` to the
-#      list below once it is merged (task B2). "Publish image" is included now
-#      because it is the current staging-branch workflow.
+#      finishes successfully.
 #   2. workflow_dispatch - manual runs and the live demo (Level 4), optionally
 #      overriding the target URL.
 #
@@ -24,7 +22,6 @@ on:
   workflow_run:
     workflows:
       - 'Deploy to Staging'
-      # - 'Deploy Staging'   # <- add task B2's staging deploy workflow name here
     types:
       - completed
   workflow_dispatch:
@@ -33,6 +30,8 @@ on:
         description: 'Staging base URL to test against (overrides the STAGING_URL variable)'
         required: false
         type: string
+  # Called by pipeline.yml after the staging deployment
+  workflow_call:
 
 permissions:
   contents: read
@@ -48,8 +47,9 @@ jobs:
     timeout-minutes: 15
 
     # For workflow_run triggers, only run when the deployment actually succeeded.
+    # Manual runs and runs called from pipeline.yml always go ahead.
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
 
     steps:
