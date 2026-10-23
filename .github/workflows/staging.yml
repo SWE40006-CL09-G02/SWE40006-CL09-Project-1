@@ -4,6 +4,8 @@ on:
   push:
     branches: [staging]
   workflow_dispatch:
+  # Called by pipeline.yml after a merge into dev
+  workflow_call:
 
 permissions:
   contents: read
