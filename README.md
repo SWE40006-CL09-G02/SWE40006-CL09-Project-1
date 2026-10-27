@@ -62,8 +62,8 @@ If any stage fails, the later stages do not run. The workflows are in `.github/w
 |---|---|
 | `feature/*` | Work in progress. Open a pull request into `dev`. |
 | `dev` | Integration branch. Needs a pull request, one approval and a passing `Test` check. |
-| `staging` | Updated only by the pipeline. |
-| `main` | Updated only by the pipeline. Production deploys wait for approval. |
+| `staging` | Updated by the pipeline. Force pushes and deletions are blocked. |
+| `main` | Updated by the pipeline. Force pushes and deletions are blocked. Production deploys wait for approval. |
 
 ## Run locally
 
