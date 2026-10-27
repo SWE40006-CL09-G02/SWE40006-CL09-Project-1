@@ -1,29 +1,20 @@
 name: Deploy Production
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
   # Called by pipeline.yml with the commit whose image was tested on staging
   workflow_call:
     inputs:
       image_sha:
         description: 'Commit SHA of the image to deploy (sha-<first 7> tag)'
-        required: false
+        required: true
         type: string
 
 permissions:
   contents: read
 
 jobs:
-  test:
-    name: Run tests
-    uses: ./.github/workflows/ci.yml
-    secrets: inherit
-
   deploy:
     name: Deploy to Production
-    needs: test
     runs-on: ubuntu-latest
 
     environment:
@@ -32,24 +23,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Find staging image
         id: image
         env:
           IMAGE_SHA: ${{ inputs.image_sha }}
         run: |
-          # From pipeline.yml: use the commit that was built and tested.
-          # On a manual run or a push to main: use the latest staging commit.
-          if [ -n "$IMAGE_SHA" ]; then
-            SHORT_SHA=${IMAGE_SHA:0:7}
-          else
-            git fetch origin staging:refs/remotes/origin/staging
-
-            STAGING_SHA=$(git merge-base HEAD origin/staging)
-            SHORT_SHA=${STAGING_SHA:0:7}
-          fi
+          # The commit that was built and tested by pipeline.yml
+          SHORT_SHA=${IMAGE_SHA:0:7}
 
           REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
 
