@@ -1,17 +1,13 @@
 name: E2E (Staging)
 
-# End-to-end acceptance tests run against the DEPLOYED Staging environment.
-#
-# This is the end-to-end layer (unit + integratio + E2E). 
-# It is intentionally separate from ci.yml (unit + integration) because
-# it must run AFTER the application has been deployed to Staging, against the
-# live Staging URL.
+# End-to-end acceptance tests (Playwright), run against the DEPLOYED Staging
+# environment after the Staging deployment. They are separate from ci.yml
+# (unit and integration tests) because they need the live Staging URL.
 #
 # Triggers:
-#   1. workflow_run - automatically after the Staging deployment workflow
-#      finishes successfully.
-#   2. workflow_dispatch - manual runs and the live demo (Level 4), optionally
-#      overriding the target URL.
+#   1. Called by pipeline.yml after the Staging deployment.
+#   2. workflow_run - after a manual run of "Deploy to Staging" completes.
+#   3. workflow_dispatch - manual runs, optionally overriding the target URL.
 #
 # Configuration:
 #   Set a repository variable STAGING_URL (Settings -> Secrets and variables ->
@@ -72,10 +68,13 @@ jobs:
 
       - name: Resolve Staging URL
         id: url
+        env:
+          INPUT_URL: ${{ github.event.inputs.staging_url }}
+          VAR_URL: ${{ vars.STAGING_URL }}
         run: |
-          URL="${{ github.event.inputs.staging_url }}"
+          URL="$INPUT_URL"
           if [ -z "$URL" ]; then
-            URL="${{ vars.STAGING_URL }}"
+            URL="$VAR_URL"
           fi
           if [ -z "$URL" ]; then
             echo "::error::No Staging URL provided. Set the STAGING_URL repository variable or pass the staging_url input."

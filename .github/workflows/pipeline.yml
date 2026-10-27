@@ -32,6 +32,8 @@ jobs:
   promote-staging:
     name: Merge dev into staging
     needs: test
+    # Only promote from dev, so a manual run on another branch cannot merge it
+    if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     concurrency:
       group: promote-staging
@@ -72,6 +74,7 @@ jobs:
   promote-main:
     name: Merge staging into main
     needs: [promote-staging, e2e]
+    if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     concurrency:
       group: promote-main

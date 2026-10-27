@@ -16,7 +16,6 @@ concurrency:
 jobs:
   deploy:
     name: Build and Deploy to EC2
-    needs: test
     runs-on: ubuntu-latest
 
     environment:
@@ -53,21 +52,14 @@ jobs:
 
       - name: Deploy to AWS EC2
         uses: appleboy/ssh-action@v1
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GHCR_USER: ${{ github.actor }}
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ubuntu
           key: ${{ secrets.SSH_STAGING_KEY }}
-          envs: GHCR_TOKEN,GHCR_USER
           script: |
             set -e
 
             IMAGE="ghcr.io/swe40006-cl09-g02/swe40006-cl09-project-1:staging"
-
-            echo "Logging into GHCR..."
-            printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
             echo "Pulling staging image..."
             docker pull "$IMAGE"
@@ -80,6 +72,7 @@ jobs:
               --name staging-app \
               --restart unless-stopped \
               --env-file /home/ubuntu/.env.staging \
+              -e NODE_ENV=staging \
               -p 3000:3000 \
               "$IMAGE"
 
