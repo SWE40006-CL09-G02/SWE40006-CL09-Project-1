@@ -1,208 +1,100 @@
-# SWE40006 CL09 Project 1
+# Task Manager CI/CD Pipeline
 
-Simple CRUD Task Manager for SWE40006 Software Deployment and Evolution.
+A small Node.js task manager, used to demonstrate a full CI/CD pipeline: automated tests, a staging environment, a manual approval gate and a production deployment.
 
-## Important
+Built by group CL09-G02 for SWE40006 Software Deployment and Evolution.
 
-<span style="color:red">
+## The app
 
-**IMPORTANT: Only push your code to the feature branch you are working on.**
+A CRUD task manager (Express and PostgreSQL) with a plain HTML/JS frontend. Users can create, view, edit and delete tasks, change a task's status (`pending`, `in_progress`, `completed`) and filter by status.
 
-**Do NOT push directly to `dev` or `main`.**
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/tasks` | List tasks, optionally `?status=` |
+| POST | `/api/tasks` | Create a task |
+| PUT | `/api/tasks/:id` | Edit title and description |
+| PATCH | `/api/tasks/:id/status` | Change status |
+| DELETE | `/api/tasks/:id` | Delete a task |
+| GET | `/health` | Health check, including a database query |
 
-Because for this assignment, it's like to simulate the real developing environment
+## Environments
 
-</span>
+| Environment | Where it runs | Database |
+|---|---|---|
+| Development | Local machine (Node or Docker) | Neon `development` branch |
+| Testing | GitHub Actions runner | In-memory Postgres (pg-mem) |
+| Staging | AWS EC2 | Neon `staging` branch |
+| Production | AWS EC2, monitored with CloudWatch | Neon `production` branch |
 
-Example:
+Staging and Production run on AWS Learner Lab instances, so they are only available while the lab is running. Database connection strings are never stored in the image or the repository. They are passed at runtime (`.env` locally, GitHub secrets and server environment files elsewhere).
 
-```bash
-git checkout feature/create-task
+## Pipeline
 
-git add .
-git commit -m "Add create task feature"
-git push origin feature/create-task
+```
+feature/** branch ──> pull request into dev
+                      (CI tests must pass, 1 approval required)
+                              │
+                       push to dev starts the pipeline:
+                              │
+   Test ──> Merge dev into staging ──> Staging ──> E2E (Staging)
+                                                       │
+   Production <── approval <── Merge staging into main ┘
 ```
 
-After your feature is complete, create a Pull Request to merge your feature branch into `dev`.
+1. **Test:** unit and integration tests (Jest) run with a coverage threshold of 80%.
+2. **Staging:** the Docker image is built once, pushed to GitHub Container Registry with a commit-sha tag, and deployed to the Staging server. A health check must pass.
+3. **E2E:** Playwright tests run against the live Staging site.
+4. **Production:** a reviewer approves, then the same image that was tested on Staging is deployed to Production.
 
-## Setup
+If any stage fails, the later stages do not run. The workflows are in `.github/workflows/`: `ci.yml`, `staging.yml`, `e2e-staging.yml`, `deploy-production.yml` and `pipeline.yml`, which ties them together.
 
-### 1. Clone the repository
+## Architecture
+
+- **Source and CI/CD:** GitHub and GitHub Actions
+- **Image registry:** GitHub Container Registry (GHCR)
+- **Servers:** two AWS EC2 instances (Staging, Production) running the Docker image
+- **Databases:** Neon PostgreSQL, one branch per environment
+- **Monitoring:** CloudWatch on Production (CPU, memory, disk, network, HTTP latency)
+
+## Branches
+
+| Branch | Purpose |
+|---|---|
+| `feature/*` | Work in progress. Open a pull request into `dev`. |
+| `dev` | Integration branch. Needs a pull request, one approval and a passing `Test` check. |
+| `staging` | Updated by the pipeline. Force pushes and deletions are blocked. |
+| `main` | Updated by the pipeline. Force pushes and deletions are blocked. Production deploys wait for approval. |
+
+## Run locally
 
 ```bash
-git clone git@github-swinburne:105385294/SWE40006-CL09-Project-1.git
+git clone https://github.com/SWE40006-CL09-G02/SWE40006-CL09-Project-1.git
 cd SWE40006-CL09-Project-1
-```
-
-### 2. Switch to the development branch
-
-```bash
-git checkout dev
-git pull origin dev
-```
-
-### 3. Install dependencies
-
-```bash
 npm install
-```
-
-### 4. Create the environment file
-
-```bash
 cp .env.example .env
 ```
 
-Update `.env` with the development database connection string:
-
-```env
-PORT=3000
-NODE_ENV=development
-DATABASE_URL=YOUR_DEVELOPMENT_DATABASE_URL
-```
-
-I will share the Neon PostgreSQL connection string in our group chat
-
-### 5. Run the application
+Set `DATABASE_URL` in `.env` to the Neon development connection string (ask the team). Then:
 
 ```bash
 npm run dev
 ```
 
-Open:
+The app is at `http://localhost:3000` and the health check at `http://localhost:3000/health`.
 
-```text
-http://localhost:3000
-```
-
-Health check:
-
-```text
-http://localhost:3000/health
-```
-
-### 6. Run tests
+### Docker
 
 ```bash
-npm test
+docker build -t task-manager .
+docker run --rm -p 3000:3000 --env-file .env task-manager
 ```
 
-## Development
-
-Before starting work:
+### Tests
 
 ```bash
-git checkout dev
-git pull origin dev
+npm test                 # unit and integration tests
+npm run test:coverage    # with the coverage report
+npm run test:e2e         # Playwright, uses STAGING_URL or BASE_URL
 ```
 
-Create your feature branch:
-
-```bash
-git checkout -b feature/your-feature
-```
-
-After finishing:
-
-```bash
-git add .
-git commit -m "Add your feature"
-git push -u origin feature/your-feature
-```
-
-Then create a Pull Request from your feature branch into `dev`.
-
-Do not develop directly on `main`.
-
-
-## Web App Overview
-
-This project is a simple **Task Manager CRUD Web Application** developed for SWE40006 Software Deployment and Evolution.
-
-The application allows users to:
-
-- Create a task
-- View tasks
-- Edit a task
-- Change task status
-- Filter tasks
-- Delete tasks
-
-The main purpose of this project is not to build a complex web application. The application is used to demonstrate our DevOps workflow, including automated testing, staging deployment, production deployment, and CI/CD.
-
-## Team Tasks
-
-Each team member should work only on their assigned feature branch.
-
-### Feature 1 — Create Task
-
-Branch:
-
-```text
-feature/create-task
-```
-
-Tasks:
-
-- Add a form to create a new task
-- Implement `POST /api/tasks`
-- Save the new task to the database
-- Refresh the task list after creation
-
-### Feature 2 — Edit Task
-
-Branch:
-
-```text
-feature/edit-task
-```
-
-Tasks:
-
-- Add an Edit button
-- Allow users to update task title and description
-- Implement `PUT /api/tasks/:id`
-- Update the task in the database
-
-### Feature 3 — Task Status
-
-Branch:
-
-```text
-feature/task-status
-```
-
-Tasks:
-
-- Allow task status to be changed
-- Supported statuses:
-  - `pending`
-  - `in_progress`
-  - `completed`
-- Save the updated status to the database
-
-### Feature 4 — Task Filter
-
-Branch:
-
-```text
-feature/task-filter
-```
-
-Tasks:
-
-- Add filters for:
-  - All
-  - Pending
-  - In Progress
-  - Completed
-- Show only tasks matching the selected status
-
-## Important
-
-⚠️ **Only push your code to the feature branch you are working on.**
-
-⚠️ **Do NOT push directly to `dev` or `main`.**
-
-After completing your feature, create a Pull Request to merge your branch into `dev`.
+Unit tests mock the database, and integration tests use an in-memory Postgres loaded with `database/schema.sql`, so neither needs a database connection. The end-to-end tests need a running instance: set `STAGING_URL` (or `BASE_URL`, default `http://127.0.0.1:3000`).
