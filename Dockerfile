@@ -14,7 +14,7 @@ COPY db ./db
 COPY routes ./routes
 COPY public ./public
 
-# Links the image to the repo on GitHub Container Registry (Changed to use organization)
+# Links the image to the repo on GitHub Container Registry
 LABEL org.opencontainers.image.source="https://github.com/SWE40006-CL09-G02/SWE40006-CL09-Project-1"
 
 # Run as the non-root user built into the image
