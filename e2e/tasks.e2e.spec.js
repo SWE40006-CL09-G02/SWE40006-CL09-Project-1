@@ -7,8 +7,8 @@ const { test, expect } = require('@playwright/test');
  * These drive a real browser against the deployed application (Staging by
  * default - see playwright.config.js) and verify the complete user-facing
  * Create / View / Update / Delete journeys, exactly as a user would perform
- * them. They are the acceptance-test layer required by the assignment on top
- * of the Jest unit and integration suites.
+ * them. They are the acceptance-test layer on top of the Jest unit and
+ * integration suites.
  *
  * Each test uses a unique task title and cleans up after itself, so the suite
  * is safe to run repeatedly against a shared Staging database.

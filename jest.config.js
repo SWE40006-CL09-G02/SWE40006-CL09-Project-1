@@ -1,7 +1,7 @@
 /**
  * Jest configuration for the SWE40006 DevOps Task Manager backend.
  *
- * Covers both test tiers required by Level 3 of the project:
+ * Covers the unit and integration test tiers:
  *   - tests/unit/         fast, isolated tests with the pg pool mocked
  *   - tests/integration/  full-stack API tests against an in-memory Postgres
  *
