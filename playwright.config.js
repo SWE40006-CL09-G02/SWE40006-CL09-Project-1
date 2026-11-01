@@ -7,7 +7,7 @@ const { defineConfig, devices } = require('@playwright/test');
  * These tests exercise the deployed web application through a real browser,
  * covering the full Create / View / Update / Delete user journeys. They are
  * designed to run against the deployed Staging environment as a pipeline job
- * after the staging deployment (Level 3 / Level 4), but can also be pointed at
+ * after the staging deployment, but can also be pointed at
  * any running instance.
  *
  * Target URL resolution (first match wins):
