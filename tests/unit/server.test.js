@@ -1,7 +1,7 @@
 /**
  * Unit tests for application-level concerns in server.js:
  *   - static hosting of the front-end (public/index.html)
- *   - the HTTP latency logging middleware used for Level 2 monitoring
+ *   - the HTTP latency logging middleware used for monitoring
  *
  * The database layer is mocked; these tests do not touch Postgres.
  */
